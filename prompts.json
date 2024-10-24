@@ -1,0 +1,77 @@
+{
+    "CODE_SNIPPETS_TEMPLATE": [
+      "This issue does not require a reply.\n",
+      "I will use the following C code snippets in the subsequent issues:\n"
+    ],
+    "SUMMARIZE_VULNERABILITIES": [
+      "Checkmarx Scan Report存在一个{Query} 的问题?\n",
+      "请仔核对{Line}到{DestLine}行的{Name}代码是否存在{Query}问题?\n",
+      "要求：\n",
+      " - 这份代码是文件名为{SrcFileName}的一个片段，开始行号为{Line}，结束行号为{DestLine}.\n",
+      " - 请结合Checkmarx的错误类型评估.\n",
+      " - 请使用中文进行回答.\n",
+      " - 如果缺失什么信息，请使用简单的描述提示我，例如：缺失代码，缺少宏定义，缺少函数等\n"
+    ],
+    "IDENTIFY_VULNERABILITIES": [
+      "作为Checkmarx的安全专家，请分析以下代码段并指出潜在的安全漏洞（如在我之前提供的代码中，{Name} 存在{Query} 的问题）。同时，请提供相应的修复建议\n",
+      "请遵循以下格式：\n",
+      " - 请仔核对{Line}到{DestLine}行的代码，确认问题的存在，给出问题评估结果。\n",
+      " - 这份代码的文件名是{SrcFileName}，范围开始行号为{Line}，结束行号为{DestLine}\n",
+      " - 返回描述（不超过两句话）.\n",
+      " - 修复建议 : 一句建议。\n",
+      " - 请保持回答简洁，避免重复的信息."
+    ],
+    "REFRACT_FIX": [
+      "Refactor the code to fix the issue.\n",
+      "以下是修复模板: {template}\n",
+      "以下是原始代码: {code}\n",
+      "Requirements:\n",
+      " - Please fix the Checkmarx issue in a git format patch based on the code i provided, to focus on the start with '{Line}:' line\n",
+      " - Checkmarx found this line the {Name} has {Query} issues, you need to fix it\n",
+      " - The name of the code file is {SrcFileName}, the start line number of the fix range is {Line}, and the end line number is {DestLine}.\n",
+      " - The issue fix code should be complete without dependencies and not have any ellipsis (....) or abbreviations or comments for the code part\n",
+      " - The issue fix code should not contain any line number markings\n"
+    ],
+    "AUTO_FIX": [
+      "Please give me the '{Name}' has '{Query}' issue fix patch!\n",
+      "Requirements:\n",
+      " - Follow the code format of the patch.\n",
+      " - Please fix the Checkmarx issue in a git format patch based on the code i provided\n",
+      " - Please reply with the code only, without the issue description\n",
+      " - The issue fix code must be directly applied using Git command with am args\n",
+      " - The issue fix code should be complete without dependencies and not have any ellipsis (....) or abbreviations or comments for the code part\n",
+      " - 确保行号不在代码中标记\n",
+      " - 请使用加/减符合标记删除/增加的代码\n",
+      " - 确保你的输出（包括代码）使用 UTF-8 编码\n",
+      " - You need to add the necessary information to the patch file\n",
+      " - 请保持回答简洁，避免重复的信息\n",
+      " - ### 提示解释\n",
+      " - 1. **明确调用**：您在提示中明确说明了需要比较两个文本，并生成一个 `diff` 文件。\n",
+      " - 2. **格式要求**：提供了详细的格式要求，包括如何标记添加和删除的行（`-` 和 `+`）以及未更改的行（` `）。\n",
+      " - 3. **标准结构**：指明了标准的 `diff` 文件格式头部，方便对生成结果进行格式化。\n",
+      " - ### 示例输出\n",
+      " - 基于上述提示，这里是一个可能的 `diff` 输出示例：\n",
+      " - ```diff\n",
+      " - --- 文本 A\n",
+      " - +++ 文本 B\n",
+      " - - Hello, world!\n",
+      " - + Hello, universe!\n",
+      " - This line is unchanged.\n",
+      "Format:\n",
+      "  From ffd25d3c6905c4877b40284e0a6d209bb27539cc\n",
+      "  From: Lin_Cheng <lin_cheng@dell.com>\n",
+      "  Date: Wed, 9 Oct 2024 13:06:43 +0530\n",
+      "  Subject: [PATCH] FRN: {SrcFileName}: {Line} to {DestLine} {Name} is {Query} fix\n",
+      "  index using code Git commit ID: ffd25d3c6905c4877b40284e0a6d209bb27539cc\n"
+    ],
+    "REVIEW_PATCH": [
+      "判断这个修复是否解决了Subject描述的问题？要求用中文回答。\n",
+      "以下是patch内容: {patch_content}\n",
+      "以下是原始代码: {code}\n"
+    ],
+    "REVIEW_FORMAT_PATCH": [
+      "判断这个内容是否符合git format patch要求?并整理这个Patch可以直接应用\n",
+      "以下是patch内容: {patch_content}\n",
+      "以下是原始代码: {code}\n"
+    ]
+  }

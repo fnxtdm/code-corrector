@@ -2,71 +2,47 @@ import os
 from src.llm_agent import LLMAgent
 
 class CExpertAgent(LLMAgent):
-    def __init__(self, c_code_directory):
-        super().__init__(model_name = "llama-3-8b-instruct")
-        self.c_code_directory = c_code_directory
+    def __init__(self):
+        super().__init__(system_role =
+            f"You are an expert C programmer. "
+            f"Your task is to help users by reviewing and improving their C code. "
+            f"Provide concise, actionable advice without being too verbose."
+        )
 
-    def analyze_code(self, code):
-        self.log(f"Analyzing C code: {code}")
+    def format_code_snippet(self, snippet_type="LINE_NUM", encoding="utf-8", file_path ="", line=0, chunk_size=400):
+        # ```cpp
+        # // Code here...
+        # ``` 
 
-    def format_code(self, code):
-        formatted_code = code.strip()
-        self.log(f"Formatted C code: {formatted_code}")
-        return formatted_code
+        seek = 0
+        code_snippets = []
+        file_fullpath = os.path.join(self.code_dir, file_path)
 
-    def generate_code_snippet(self, snippet_type):
-        snippets = {
-            "for_loop": "for (int i = 0; i < n; i++) { /* code */ }",
-            "if_statement": "if (condition) { /* code */ }",
-        }
-        return snippets.get(snippet_type, "Snippet not found")
+        with open(file_fullpath, 'r', encoding=encoding) as file:
+            file_content = file.read()
 
-    def static_analysis(self, code):
-        issues = []
-        if "unused_variable" in code:
-            issues.append("Warning: Unused variable found.")
-        self.log(f"Static analysis results: {issues}")
-        return issues
+        # Split the file content into chunks by lines
+        # Limit the lines to a maximum of 400 starting from the seek position
+        lines = file_content.splitlines()
+
+        if len(lines) > chunk_size:
+            seek = max(0, line - int(chunk_size/2))
+
+        lines_to_upload = lines[seek:seek + chunk_size]
+
+        chunks = [lines_to_upload[i:i + chunk_size] for i in range(0, len(lines_to_upload), chunk_size)]
+
+        for i, chunk in enumerate(chunks):
+            if (snippet_type == "LINE_NUM"):
+                # Add line numbers to each line in the chunk
+                chunk_with_line_numbers = [f"{seek + j + 1 + i * chunk_size}:   {line}" for j, line in enumerate(chunk)]
+                chunk_text = "\n".join(chunk_with_line_numbers)
+            else:
+                chunk_text = "\n".join(chunk)
+
+            code_snippets.append(f"这个段代码是从第 {seek + 1} 行开始:\n```c\n{chunk_text}\n```\n")
+        return code_snippets
 
     def run_code(self, code):
         self.log(f"Running C code: {code}")
         return "Execution results..."
-
-    def compare_code(self, code1, code2):
-        differences = set(code1.splitlines()) ^ set(code2.splitlines())
-        return differences
-    
-    def set_code_directory(self, c_code_directory):
-        self.c_code_directory = c_code_directory
-        # self.log(f"C code directory set to: {c_code_directory}")
-
-    def get_current_commit_id(self):
-        try:
-            # Change directory to the C code directory
-            os.chdir(self.c_code_directory)
-            # Retrieve the current commit ID
-            commit_id = os.popen('git rev-parse HEAD').read().strip()
-            self.log(f"Current commit ID: {commit_id}")
-            return commit_id
-        except Exception as e:
-            self.log(f"Error retrieving commit ID: {e}")
-            return None
-
-    def read_code_file(self, src_file_name, line, dest_line):
-        # Construct the full path to the source file
-        src_file_path = os.path.join(self.c_code_directory, src_file_name)
-
-        # Read the code from the source file
-        try:
-            with open(src_file_path, 'r') as file:
-                code_lines = file.readlines()
-                # Extract the relevant lines of code
-                code = ''.join(code_lines[line-1:dest_line])
-                print(code)
-                return code
-        except FileNotFoundError:
-            self.log(f"Source file {src_file_name} not found in directory {self.c_code_directory}.")
-            return None
-        except Exception as e:
-            self.log(f"Error reading source file {src_file_name}: {e}")
-            return None

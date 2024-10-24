@@ -3,20 +3,25 @@ import logging
 import argparse
 import tkinter as tk
 
+from src.c_expert_agent import CExpertAgent
 from src.config import Config
-from src.cc_viewer_app import CCViewerApp
+from src.app_view_controller import AppViewController
 from src.checkmarx_expert import CheckmarxExpert
 from src.format_patch_expert import FormatPatchExpert
+from src.prompt_expert_agent import PromptExpertAgent
 
 global_config = Config()
 
 # Configure logging
-logging.basicConfig(filename='cc.log', level=logging.INFO,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    filename='cc.log', encoding='utf-8', level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Create a Checkmarx Expert agent
+prompt_agent = PromptExpertAgent()
 checkmarx_agent = CheckmarxExpert(logging)
 formatpatch_agent = FormatPatchExpert()
+ccode_agent = CExpertAgent()
 
 def main():
     def process_row(index, row):
@@ -111,6 +116,21 @@ if __name__ == "__main__":
         global_config.csv_file,
         global_config.code_dir)
 
+    ccode_agent.set_parameter(
+        global_config.language,
+        global_config.url,
+        global_config.api_key,
+        global_config.csv_file,
+        global_config.code_dir)
+
+    prompt_agent.set_parameter(
+        global_config.language,
+        global_config.url,
+        global_config.api_key,
+        global_config.csv_file,
+        global_config.code_dir
+    )
+
     checkmarx_agent.set_parameter(
         global_config.language,
         global_config.url,
@@ -124,5 +144,12 @@ if __name__ == "__main__":
         main()
     else:
         root = tk.Tk()
-        app = CCViewerApp(root, global_config, checkmarx_agent, formatpatch_agent)
+        app = AppViewController(
+            root,
+            global_config,
+            prompt_agent,
+            checkmarx_agent,
+            ccode_agent,
+            formatpatch_agent
+        )
         root.mainloop()
