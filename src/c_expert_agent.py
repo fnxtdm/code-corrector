@@ -40,7 +40,7 @@ class CExpertAgent(LLMAgent):
             else:
                 chunk_text = "\n".join(chunk)
 
-            code_snippets.append(f"这个段代码是从第 {seek + 1} 行开始:\n```c\n{chunk_text}\n```\n")
+            code_snippets.append(f"The code starts from line {seek + 1}:\n```c\n{chunk_text}\n```\n")
         return code_snippets
 
     def run_code(self, code):

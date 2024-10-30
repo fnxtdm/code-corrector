@@ -42,10 +42,14 @@ class AppViewController:
         self.file_menu = tk.Menu(self.menu_bar, tearoff=0)
         self.menu_bar.add_cascade(label="File", menu=self.file_menu)
         self.file_menu.add_command(label="Open", command=self.open_file)
-        self.file_menu.add_command(label="Run", command=self.run_all)
         self.file_menu.add_command(label="Properties", command=self.open_properties_dialog)
         self.file_menu.add_separator()
         self.file_menu.add_command(label="Exit", command=root.quit)
+
+        # Create Action menu
+        self.action_menu = tk.Menu(self.menu_bar, tearoff=0)
+        self.menu_bar.add_cascade(label="Action", menu=self.action_menu)
+        self.action_menu.add_command(label="Run All", command=self.run_all)
 
         # Create Help menu
         self.help_menu = tk.Menu(self.menu_bar, tearoff=0)
@@ -235,26 +239,15 @@ class AppViewController:
         # # If dialog exists, do nothing
         # if self.dialog and self.dialog.winfo_exists():
             # return None
-
         try:
-            line = self.checkmarx_agent.issue_details['Line']
-            src_file_name = self.checkmarx_agent.issue_details['SrcFileName']
-
-            code_snippets = self.ccode_agent.format_code_snippet(
-                snippet_type="LINE_NUM", encoding="utf-8", file_path=src_file_name, line=line, chunk_size=50)
-
-            self.checkmarx_agent.execute_action(
-                issue, action_plan="CODE_SNIPPETS_TEMPLATE", code_snippets=[])
-            vulnerabilities = self.checkmarx_agent.execute_action(issue, "IDENTIFY_VULNERABILITIES")
-
-            self.insert_issue_text(vulnerabilities)
+            vulnerabilities = self.checkmarx_agent.identify_vulnerabilities(issue)
+            if vulnerabilities is not None:
+                self.insert_issue_text(vulnerabilities)
         except Exception as e:
-            # Handle any other exceptions that might occur
-            print(f"An error occurred: {e}")
+            print(f"An error occurred: {e} on identify vulnerabilities!")
 
         self.status_bar.config(text="Ready")
         self.dialog.destroy()
-
         return None
 
     def on_identify_vulnerabilities(self):
@@ -267,23 +260,8 @@ class AppViewController:
         return None
 
     async def async_execute_action(self, issue, prompt_type="", code_snippets=[]):
-        try:
-            issue_details = self.checkmarx_agent.details_from_issue(issue)
-            prompt = self.prompt_agent.generate_prompt(prompt_type, issue_details)
-            patch_content = self.checkmarx_agent.chat_completions(prompt)
-            self.insert_issue_text(patch_content, "code_light_blue")
-
-            # Save format patch
-            result = self.formatpatch_agent.is_format_patch(patch_content, code_snippets)
-            print(result)
-
-            src_file_name = issue_details['SrcFileName']
-            self.formatpatch_agent.format_patch(src_file_name, patch_content)
-
-        except Exception as e:
-            # Handle any other exceptions that might occur
-            print(f"An error occurred: {e}")
-
+        self.checkmarx_agent.execute_action_with_patch(
+            issue, prompt_type, code_snippets, self.insert_issue_text)
         self.status_bar.config(text="Ready")
         self.dialog.destroy()
 
@@ -358,8 +336,23 @@ class AppViewController:
         if not file_path:
             return
 
+        self.ccode_agent.set_parameter(
+            self.global_config.language,
+            self.global_config.model_name,
+            self.global_config.url,
+            self.global_config.api_key,
+            self.global_config.csv_file,
+            self.global_config.code_dir)
+        self.prompt_agent.set_parameter(
+            self.global_config.language,
+            self.global_config.model_name,
+            self.global_config.url,
+            self.global_config.api_key,
+            self.global_config.csv_file,
+            self.global_config.code_dir)
         self.formatpatch_agent.set_parameter(
             self.global_config.language,
+            self.global_config.model_name,
             self.global_config.url,
             self.global_config.api_key,
             self.global_config.csv_file,
@@ -368,6 +361,7 @@ class AppViewController:
         self.global_config.csv_file = file_path
         self.checkmarx_agent.set_parameter(
             self.global_config.language,
+            self.global_config.model_name,
             self.global_config.url,
             self.global_config.api_key,
             self.global_config.csv_file,
@@ -379,34 +373,24 @@ class AppViewController:
         # Clear existing items from the listbox
         self.issues_listbox.delete(0, tk.END)
         # Insert sample_issues data into the listbox
-        for issues in sample_issues:
-            self.issues_listbox.insert(tk.END, issues)
+        for issue in sample_issues:
+            self.issues_listbox.insert(tk.END, issue)
 
         self.global_config.save_to_disk()
 
+
+    async def async_autofix(self):
+        self.checkmarx_agent.run(output_callback=self.insert_issue_text)
+
+        self.status_bar.config(text="Ready")
+        self.dialog.destroy()
+        return None
+
     def run_all(self):
-        # 获取当前选中的索引
-        try:
-            issue_index = self.issues_listbox.curselection()[0]
-        except IndexError:
-            # 如果没有选中任何项目，直接返回
-            return None
-
-        # 获取列表中的所有项目
-        issues_count = len(self.issues_listbox.get(0, tk.END))
-
-        # 如果当前索引是最后一个项目，使用 after 方法保持 GUI 响应
-        if issue_index >= issues_count - 1:
-            self.root.after(100, self.run_all)
-            return None
-
-        # 清除所有选中状态
-        self.issues_listbox.selection_clear(0, tk.END)
-        # 激活下一个项目
-        self.issues_listbox.activate(issue_index + 1)
-        # 选中下一个项目
-        self.issues_listbox.selection_set(issue_index + 1)
-
+        threading.Thread(target=lambda: asyncio.run(
+            self.async_autofix())).start()
+        self.status_bar.config(text="Processing...")
+        self.show_dialog("Generating patch...", "Generating patch, please wait...")
         return None
 
     def show_about(self):

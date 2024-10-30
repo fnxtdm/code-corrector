@@ -58,8 +58,8 @@ class PromptExpertAgent(LLMAgent):
         #     'Detection Date': '12/25/2023 5:09'
         # }
 
-        template = self.generate_fix_template(issue_details)
-        print("Template:", template)
+        template = "" #self.generate_fix_template(issue_details)
+        # print("Template:", template)
 
         # subtasks = self.generate_subtask(issue_details)
         # print("Task:", subtasks)

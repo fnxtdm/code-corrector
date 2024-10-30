@@ -44,13 +44,13 @@ class FormatPatchExpert(LLMAgent):
 
     def format_patch(self, src_file_name, patch_content):
         # Save the extracted code to a file in the patchs/ directory
-        patch_dir = "patchs"
+        patch_dir = "patchs/"+self.model_name
         os.makedirs(patch_dir, exist_ok=True)
 
         timestamp = time.strftime("%Y%m%d%H%M%S")
         self.patch_file_path = os.path.join(patch_dir, f"patch_{timestamp}.diff")
 
-        with open(self.patch_file_path, 'w') as patch_file:
+        with open(self.patch_file_path, 'w', encoding='utf-8') as patch_file:
             patch_file.write(patch_content)
 
         print(f"Saved extracted code to {self.patch_file_path}")

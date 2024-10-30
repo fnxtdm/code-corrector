@@ -3,6 +3,7 @@ import os
 class Config:
     def __init__(self):
         self.language = "English"
+        self.model_name = "llama-3-8b-instruct"
         self.code_dir = ""
         self.csv_file = ""
         self.api_key = ""
@@ -13,6 +14,7 @@ class Config:
     def save_to_disk(self):
         with open(self.config_path, 'w') as config_file:
             config_file.write(f"language={self.language}\n")
+            config_file.write(f"model_name={self.model_name}\n")
             config_file.write(f"code_dir={self.code_dir}\n")
             config_file.write(f"csv_file={self.csv_file}\n")
             config_file.write(f"api_key={self.api_key}\n")

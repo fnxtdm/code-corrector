@@ -14,14 +14,14 @@ global_config = Config()
 
 # Configure logging
 logging.basicConfig(
-    filename='cc.log', encoding='utf-8', level=logging.DEBUG,
+    filename='cc.log', encoding='utf-8', level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Create a Checkmarx Expert agent
 prompt_agent = PromptExpertAgent()
-checkmarx_agent = CheckmarxExpert(logging)
 formatpatch_agent = FormatPatchExpert()
 ccode_agent = CExpertAgent()
+checkmarx_agent = CheckmarxExpert(prompt_agent, formatpatch_agent, ccode_agent, logging)
 
 def main():
     def process_row(index, row):
@@ -111,6 +111,7 @@ if __name__ == "__main__":
 
     formatpatch_agent.set_parameter(
         global_config.language,
+        global_config.model_name,
         global_config.url,
         global_config.api_key,
         global_config.csv_file,
@@ -118,6 +119,7 @@ if __name__ == "__main__":
 
     ccode_agent.set_parameter(
         global_config.language,
+        global_config.model_name,
         global_config.url,
         global_config.api_key,
         global_config.csv_file,
@@ -125,6 +127,7 @@ if __name__ == "__main__":
 
     prompt_agent.set_parameter(
         global_config.language,
+        global_config.model_name,
         global_config.url,
         global_config.api_key,
         global_config.csv_file,
@@ -133,6 +136,7 @@ if __name__ == "__main__":
 
     checkmarx_agent.set_parameter(
         global_config.language,
+        global_config.model_name,
         global_config.url,
         global_config.api_key,
         global_config.csv_file,
