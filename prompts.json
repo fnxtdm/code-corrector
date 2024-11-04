@@ -1,5 +1,5 @@
 {
-    "CODE_SNIPPETS_TEMPLATE": [
+    "CODE_SNIPPETS": [
       "Note: This query does not require a response. Please do not generate any reply.\n",
       "I will be using the following C code snippets in future discussions.\n",
       "{code}"
@@ -14,11 +14,15 @@
       " - 如果缺失什么信息，请使用简单的描述提示我，例如：缺失代码，缺少宏定义，缺少函数等\n"
     ],
     "CHECKMARX_QUERY": [
-      "请先完全理解Checkmarx报告类型为{Query}的问题，这个问题伴随{Name}发生。\n"
+      "请先完全理解Checkmarx报告类型为{Query}的问题，这个问题伴随{Name}发生。\n",
+      "要求：\n",
+      " - 回复的内容中如果有代码片段，请去掉行号。\n"
     ],
     "IDENTIFY_VULNERABILITIES": [
       "{code} \n",
-      "请先完全理解Checkmarx报告显示第{Line}行号到第{DestLine}行号的{Name}函数存在{Query}问题。\n"
+      "请先完全理解Checkmarx报告显示第{Line}行号到第{DestLine}行号的{Name}函数存在{Query}问题。\n",
+      "要求：\n",
+      " - 回复的内容中如果有代码片段，请去掉行号。\n"
     ],
     "AUTO_FIX_CODE": [
       "请先理解第{Line}行号到第{DestLine}行号的代码，然后按照以下要求进行代码修改解决{Name}的{Query}问题：\n",
@@ -57,13 +61,13 @@
       "  - 请提供每次替换的理由，重点关注代码安全性和可维护性的提升。\n",
       "  - 请确保所有更改都有助于改善代码的功能或逻辑。\n",
       " 2. 输出格式：\n",
+      "  - 中文字体使用UTF-8字符集编码\n",
+      "  - 修复patch是否符合git format patch要求\n",
+      "  - 只需输出diff内容\n",
       "  - 请先理解git format-patch格式,然后按照格式生成修复patch。\n",
       "  - 如果遇到打印时间信息，请使用系统最新时间\n",
       "  - Subject使用以下格式: Subject: [PATCH] FRN: {SrcFileName}: {Line} to {DestLine} {Name} is {Query} fix\n",
-      "  - 回答内容只限于修复patch的内容，其他任何信息都不需要返回。\n",
-      "  - 中文字体使用UTF-8字符集编码\n",
       " 3. 校对：\n",
-      "  - 请校对修复patch是否符合git format patch要求。\n",
       "  - 请校对修复patch内容准确性。\n",
       "  - 请校对修复patch内容完整性。\n",
       "  - 请校对修复patch无多余信息。\n",
@@ -131,6 +135,11 @@
       "  请特别小心引入依赖项，确保修改后的代码完整性得到维护。\n",
       "Please follow the above requirements in making the necessary modifications to the code.\n"
     ],
+    "AUTO_FIX_TEMPLATE": [
+      "请为路径为{SrcFileName}的文件，{Name}存在{Query}问题生成修复模板\n",
+      "要求：\n",
+      " - 请为{Query}问题生成修复模板，忽略其他问题\n"
+    ],
     "REFRACT_FIX": [
       "Refactor the code to fix the issue.\n",
       "Requirements:\n",
@@ -143,13 +152,19 @@
       "以下是原始代码: {code}\n"
     ],
     "REVIEW_PATCH": [
-      "判断这个修复是否解决了Subject描述的问题？要求用中文回答。\n",
+      "评估这个修复是否解决了Subject描述中的{Name}存在{Query}问题？如果没有，请给我一个更好的修复代码。\n",
       "以下是patch内容: {patch_content}\n",
-      "以下是原始代码: {code}\n"
+      "请参考以下原始代码{code}\n",
+      "要求：\n",
+      "  - 请校对修复patch内容准确性。\n",
+      "  - 请校对修复patch内容完整性。\n",
+      "  - 请校对修复patch无多余信息。\n",
+      "  - 请校对修复patch中必须有任意一个或者多个'+'和'-'标记。\n",
+      "  - 请校对修复patch中'+'和'-'标记行正确。\n"
     ],
     "REVIEW_FORMAT_PATCH": [
       "判断这个内容是否符合git format patch要求?并整理这个Patch可以直接应用\n",
       "以下是patch内容: {patch_content}\n",
-      "以下是原始代码: {code}\n"
+      "请参考以下原始代码{code}\n"
     ]
   }

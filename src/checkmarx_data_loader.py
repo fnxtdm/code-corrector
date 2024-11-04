@@ -1,3 +1,5 @@
+import json
+import re
 from src.csv_data_loader import CSVDataLoader
 from src.pdf_data_loader import PDFDataLoader
 
@@ -85,20 +87,22 @@ class CheckmarxDataLoader:
     def select_item_by_sample_issue(self, sample_issue):
         """通过样本问题(SrcFileName:Line)获取项"""
         if self.data_loader:
-            src_file_name, line = sample_issue.split(':')
-            line = int(line)
-            item = self.data_loader.data_frame[
-                (self.data_loader.data_frame['SrcFileName'] == src_file_name) &
-                (self.data_loader.data_frame['Line'] == line)
-            ]
-            if not item.empty:
-                return item.to_dict(orient='records')[0]
-            else:
-                print("未找到匹配的项。")
-                return None
-        else:
-            print("数据尚未加载。")
-            return None
+            # sample_issue = '[Buffer Improper Index Access] system/src/ping6.c:452-452'
+            # Regular expression that matches the format you described
+            match = re.match(r'\[(.*?)\] (.*?):(\d+)-(\d+)', sample_issue)
+            if match:
+                Query = match.group(1)
+                SrcFileName, Line, DestLine = match.group(2), int(match.group(3)), int(match.group(4))
+
+                item = self.data_loader.data_frame[
+                    (self.data_loader.data_frame['Query'] == Query) &
+                    (self.data_loader.data_frame['SrcFileName'] == SrcFileName) &
+                    (self.data_loader.data_frame['Line'] == Line) &
+                    (self.data_loader.data_frame['DestLine'] == DestLine)
+                ]
+
+                if not item.empty:
+                    return item.to_dict(orient='records')[0]
 
     def load_sample_issues(self):
         items = []
@@ -112,10 +116,27 @@ class CheckmarxDataLoader:
             return items
 
         for _, row in self.data_loader.data_frame.iterrows():
-            file_name = row.get('SrcFileName')
+            Query=row.get('Query')
+            # QueryPath=row.get('QueryPath')
+            # Custom=row.get('Custom')
+            SrcFileName=row.get('SrcFileName')
+            Line=row.get('Line')
+            DestLine=row.get('DestLine')
+            Name=row.get('Name')
+            # ResultStatus=row.get('Result Status')
+            # Link=row.get('Link')
+            # file_name = row.get('SrcFileName')
             # query = row.get('Query')
-            line = row.get('Line')
-            item_str = f"{file_name}:{line}"
+            # line = row.get('Line')
+
+            item_str = json.dumps({
+                'Query': Query,
+                'SrcFileName': SrcFileName,
+                'Line': Line,
+                'DestLine': DestLine,
+                'Name': Name
+            })
             items.append(item_str)
-        items.sort(key=lambda x: (x.split(':')[0], int(x.split(':')[1])))
+
+        items.sort()
         return items

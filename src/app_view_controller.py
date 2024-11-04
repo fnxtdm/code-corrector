@@ -1,12 +1,13 @@
-import os
 import asyncio
+import json
 import threading
+import webbrowser
 import concurrent.futures
 import tkinter as tk
 import tkinter.font as tkFont
 
-from traceloop.sdk import Traceloop
-from traceloop.sdk.decorators import workflow
+# from traceloop.sdk import Traceloop
+# from traceloop.sdk.decorators import workflow
 
 from tkinter import ttk, filedialog, messagebox
 from src.properties_dialog import PropertiesDialog
@@ -27,6 +28,7 @@ class AppViewController:
 
         self.dialog = None
         self._selected_issue = None
+        self.auto_color = ""
 
         self.root.title("Code Corrector")
 
@@ -88,15 +90,7 @@ class AppViewController:
         self.scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.issues_listbox['yscrollcommand'] = self.scrollbar.set
 
-        # Add issues to listbox
-        sample_issues = []
-        sample_issues = checkmarx_agent.checkmarx_data_loader.load_sample_issues()
-        if not isinstance(sample_issues, list):
-            sample_issues = []
-
-        for issues in sample_issues:
-            self.issues_listbox.insert(tk.END, issues)
-
+        self.listbox_refresh()
         # self.issues_listbox.configure(font=font_style)
 
         # Label above the content display area
@@ -108,6 +102,7 @@ class AppViewController:
             root, text="\n\n\n\n\n", font=tkFont.Font(size=10, weight="bold"), foreground="red")
         # Align the label to the left
         self.detail_label.pack(padx=10, pady=1, anchor='w')
+        self.detail_label.bind("<Button-1>", self.open_link)
 
         # add buttons for handel auto and manual fix code
         button_frame = ttk.Frame(root)
@@ -151,22 +146,23 @@ class AppViewController:
         # self.issues_text.tag_configure("code_light_gray", background="#F5F5F5", foreground="#333333")  # 深灰色字体，浅灰背景
         self.issues_text.tag_configure("code_light_blue", background="#EAF3FF", foreground="#003366")  # 深蓝色字体，浅蓝背景
         # self.issues_text.tag_configure("code_light_green", background="#F0FFF0", foreground="#006400")  # 深绿色字体，淡绿色背景
-
         # self.issues_text.tag_configure("diff_add_green", background="#DFF0D8", foreground="#006400")  # 深绿色字体，新增绿色背景
         # self.issues_text.tag_configure("diff_remove_red", background="#F2DEDE", foreground="#8B0000")  # 深红色字体，删除红色背景
         # self.issues_text.tag_configure("diff_modify_yellow", background="#FCF8E3", foreground="#8B8000")  # 深黄色字体，修改黄色背景
-
         # self.issues_text.tag_configure("background_white", background="#FFFFFF", foreground="#000000")  # 黑色字体，白色背景
         # self.issues_text.tag_configure("background_light_gray", background="#F8F8F8", foreground="#333333")  # 深灰色字体，浅灰背景
         # self.issues_text.tag_configure("background_light_blue", background="#E6ECF0", foreground="#003366")  # 深蓝色字体，浅蓝背景
 
         # self.issues_text.tag_configure("dell_blue", background="#0076CE", foreground="#FFFFFF")  # 白色字体，Dell蓝色背景
 
-        # self.issues_text.bind("<<Selection>>", highlight_selection)
+        self.issues_text.tag_configure("highlight", background="blue", foreground="white")
+        self.issues_text.bind("<<Selection>>", self.highlight_selection)
+
         global sample_content
         sample_content = (
             "Please select an issue from the list to view AI generated corrections patches."
         )
+
         # Add content
         self.issues_text.insert(tk.END, sample_content)
         # self.issues_text.configure(font=font_style)
@@ -186,12 +182,48 @@ class AppViewController:
         self._selected_issue = issue
         return None
 
-    def insert_issue_text(self, text, color="", clean=False):
+    def highlight_selection(self, event):
+        self.issues_text.tag_remove("highlight", "1.0", tk.END)
+
+        try:
+            self.issues_text.tag_add("highlight", "sel.first", "sel.last")
+        except tk.TclError:
+            pass
+
+    def open_link(self, event=None):
+        try:
+            if self.selected_issue is not None:
+                issue_details = self.checkmarx_agent.details_from_issue(self.selected_issue)
+                webbrowser.open(issue_details['Link'])
+        except KeyError:
+            print("No link found")
+
+    def switch_color(self):
+        if self.auto_color == "":
+            self.auto_color = "code_light_blue"
+        else:
+            self.auto_color = ""
+
+    def output_text_with_format(self, text, color="", clean=False):
         if clean:
             self.issues_text.delete("1.0", tk.END)
 
-        self.issues_text.insert(tk.END, "\n\n")
-        self.issues_text.insert(tk.END, text + '\n', color)
+        self.issues_text.insert(tk.END, "\n")
+
+        self.switch_color()
+
+        lines = text.split('\n')
+        for line in lines:
+            if line.startswith("```c"):
+                self.issues_text.insert(tk.END, "\n", self.auto_color)
+                # self.auto_color = "code_light_blue"
+                continue
+            if line.startswith("```"):
+                self.issues_text.insert(tk.END, "\n", self.auto_color)
+                # self.auto_color = ""
+                continue
+
+            self.issues_text.insert(tk.END, line + '\n', self.auto_color)
 
         self.issues_text.see(tk.END)
 
@@ -206,21 +238,11 @@ class AppViewController:
         # Clean the content of self.issues_text
         self.issues_text.delete("1.0", tk.END)
         self.checkmarx_agent.clean_history()
+        self.auto_color = ""
 
         # Change the value of self.detail_label to display multiple lines
         issue_details = self.checkmarx_agent.details_from_issue(issue)
         self.update_issue_details(issue_details)
-
-        def on_upload_complete(result):
-            self.issues_text.insert(tk.END, result, "code_light_blue")
-            self.issues_text.see(tk.END)
-
-        # prompt_snippets = []
-        # prompt_snippets = self.prompt_agent.generate_prompt(
-        #     "story", f"I have a Checkmarx scan report {self.selected_issue}, please help me fix it!")
-
-        # for snippet in prompt_snippets:
-        #     on_upload_complete(snippet)
 
         line = issue_details['Line']
         src_file_name = issue_details['SrcFileName']
@@ -228,7 +250,7 @@ class AppViewController:
             snippet_type="LINE_NUM", encoding="utf-8", file_path=src_file_name, line=line, chunk_size=50)
 
         for snippet in code_snippets:
-            on_upload_complete(snippet)
+            self.output_text_with_format(snippet)
         self.status_bar.config(text="Ready")
         return None
 
@@ -242,7 +264,7 @@ class AppViewController:
         try:
             vulnerabilities = self.checkmarx_agent.identify_vulnerabilities(issue)
             if vulnerabilities is not None:
-                self.insert_issue_text(vulnerabilities)
+                self.output_text_with_format(vulnerabilities)
         except Exception as e:
             print(f"An error occurred: {e} on identify vulnerabilities!")
 
@@ -259,60 +281,74 @@ class AppViewController:
             self.async_identify_vulnerabilities(self.selected_issue))).start()
         return None
 
-    async def async_execute_action(self, issue, prompt_type="", code_snippets=[]):
-        self.checkmarx_agent.execute_action_with_patch(
-            issue, prompt_type, code_snippets, self.insert_issue_text)
-        self.status_bar.config(text="Ready")
-        self.dialog.destroy()
 
-        return None
 
     def on_refactor_fix(self):
         self.status_bar.config(text="Processing...")
         self.show_dialog("Generating patch...", "Generating patch, please wait...")
 
-        line = self.checkmarx_agent.issue_details['Line']
-        src_file_name = self.checkmarx_agent.issue_details['SrcFileName']
+        async def fasync(issue=self.selected_issue):
+            issue_details = self.checkmarx_agent.details_from_issue(issue)
+            line = issue_details['Line']
+            src_file_name = issue_details['SrcFileName']
 
-        code_snippets = self.ccode_agent.format_code_snippet(
-            snippet_type="WITHOUT_LINE_NUM", encoding="utf-8", file_path=src_file_name, line=line, chunk_size=100)
+            # self.checkmarx_agent.identify_vulnerabilities(issue)
+
+            # code_snippets = self.ccode_agent.format_code_snippet(
+            #     snippet_type="WITHOUT_LINE_NUM", encoding="utf-8", file_path=src_file_name, line=line, chunk_size=100)
+            template = self.checkmarx_agent.generate_fixtemplate(issue_details)
+
+            result = self.checkmarx_agent.execute_action(
+                issue, "REFRACT_FIX", code_snippets=[], template=template)
+            self.output_text_with_format(result, "code_light_blue")
+
+            self.status_bar.config(text="Ready")
+            self.dialog.destroy()
+            return None
 
         threading.Thread(target=lambda: asyncio.run(
-            self.async_execute_action(self.selected_issue, "REFRACT_FIX", code_snippets))).start()
+            fasync())).start()
         return None
 
     def on_auto_fix(self):
         self.status_bar.config(text="Processing...")
         self.show_dialog("Generating patch...", "Generating patch, please wait...")
 
-        line = self.checkmarx_agent.issue_details['Line']
-        src_file_name = self.checkmarx_agent.issue_details['SrcFileName']
+        async def fasync(issue=self.selected_issue):
+            issue_details = self.checkmarx_agent.details_from_issue(issue)
+            line = issue_details['Line']
+            src_file_name = issue_details['SrcFileName']
 
-        code_snippets = self.ccode_agent.format_code_snippet(
-            snippet_type="WITHOUT_LINE_NUM", encoding="utf-8", file_path=src_file_name, line=line, chunk_size=100)
+            code_snippets = self.ccode_agent.format_code_snippet(
+                snippet_type="WITHOUT_LINE_NUM", encoding="utf-8", file_path=src_file_name, line=line, chunk_size=100)
 
-        threading.Thread(target=lambda: asyncio.run(
-            self.async_execute_action(self.selected_issue, "AUTO_FIX", code_snippets))).start()
+            self.checkmarx_agent.execute_action_with_patch(
+                issue, "AUTO_FIX", code_snippets, self.output_text_with_format)
+            self.status_bar.config(text="Ready")
+            self.dialog.destroy()
+            return None
+
+        threading.Thread(target=lambda: asyncio.run(fasync())).start()
         return None
 
     def on_review_patch(self):
-        async def fasync():
+        async def fasync(issue=self.selected_issue):
+            issue_details = self.checkmarx_agent.details_from_issue(issue)
+            line = issue_details['Line']
+            src_file_name = issue_details['SrcFileName']
 
-                line = self.checkmarx_agent.issue_details['Line']
-                src_file_name = self.checkmarx_agent.issue_details['SrcFileName']
+            code_snippets = self.ccode_agent.format_code_snippet(
+                snippet_type="LINE_NUM", encoding="utf-8", file_path=src_file_name, line=line, chunk_size=100)
 
-                code_snippets = self.ccode_agent.format_code_snippet(
-                    snippet_type="LINE_NUM", encoding="utf-8", file_path=src_file_name, line=line, chunk_size=100)
+            result = self.formatpatch_agent.review_patch(issue_details, code_snippets)
 
-                result = self.formatpatch_agent.review_patch(code_snippets)
+            self.output_text_with_format(result)
 
-                self.insert_issue_text(result)
+            # fixed_code = self.checkmarx_agent.chat_completions(result)
+            # self.output_text_with_format(fixed_code)
 
-                # fixed_code = self.checkmarx_agent.chat_completions(result)
-                # self.insert_issue_text(fixed_code)
-
-                self.status_bar.config(text="Ready")
-                self.dialog.destroy()
+            self.status_bar.config(text="Ready")
+            self.dialog.destroy()
 
         # Run the asynchronous function in a background thread
         threading.Thread(target=lambda: asyncio.run(fasync())).start()
@@ -320,7 +356,7 @@ class AppViewController:
 
         return None
 
-    @workflow(name="selected_issue")
+    # @workflow(name="selected_issue")
     def on_selected_issue(self, event):
         try:
             curselection = self.issues_listbox.curselection()
@@ -368,29 +404,40 @@ class AppViewController:
             self.global_config.code_dir
         )
         self.checkmarx_agent.load_checkmarx_data()
-
-        sample_issues = self.checkmarx_agent.checkmarx_data_loader.load_sample_issues()
-        # Clear existing items from the listbox
-        self.issues_listbox.delete(0, tk.END)
-        # Insert sample_issues data into the listbox
-        for issue in sample_issues:
-            self.issues_listbox.insert(tk.END, issue)
-
         self.global_config.save_to_disk()
 
+        self.listbox_refresh()
+
+    def listbox_refresh(self):
+        sample_issues = self.checkmarx_agent.checkmarx_data_loader.load_sample_issues()
+        self.issues_listbox.delete(0, tk.END)
+        for issue in sample_issues:
+            issue_str = self.issue_to_string(issue)
+            self.issues_listbox.insert(tk.END, issue_str)
+
+    def issue_to_string(self,issue):
+        issue_dict = json.loads(issue)
+        issue_str = "[{}] {}:{}-{}".format(
+            issue_dict['Query'],
+            issue_dict['SrcFileName'],
+            issue_dict['Line'],
+            issue_dict['DestLine']
+        )
+        return issue_str
+
     def run_all(self):
-        async def async_autofix(self):
-            sample_issues = self.checkmarx_data_loader.load_sample_issues()
+        async def async_autofix():
+            sample_issues = self.checkmarx_agent.checkmarx_data_loader.load_sample_issues()
 
             for issue in sample_issues:
-                self.checkmarx_agent.run(issue, output_callback=self.insert_issue_text)
+                issue_str = self.issue_to_string(issue)
+                self.checkmarx_agent.run(issue_str, output_callback=self.output_text_with_format)
 
             self.status_bar.config(text="Ready")
             self.dialog.destroy()
             return None
 
-        threading.Thread(target=lambda: asyncio.run(
-            async_autofix())).start()
+        threading.Thread(target=lambda: asyncio.run(async_autofix())).start()
 
         self.status_bar.config(text="Processing...")
         self.show_dialog("Generating patch...", "Generating patch, please wait...")

@@ -15,7 +15,7 @@ class PromptExpertAgent(LLMAgent):
         with open("prompts.json", 'r', encoding='utf-8') as file:
             self.prompts = json.load(file)
 
-    def generate_prompt(self, prompt_type="", issue_details={}, code_snippets=[]):
+    def generate_prompt(self, prompt_type="", issue_details={}, code_snippets=[], template=""):
         self.chat_history.clear()
 
         # print("prompt_type:", prompt_type)
@@ -58,7 +58,7 @@ class PromptExpertAgent(LLMAgent):
         #     'Detection Date': '12/25/2023 5:09'
         # }
 
-        template = "" #self.generate_fix_template(issue_details)
+        template = template
         # print("Template:", template)
 
         # subtasks = self.generate_subtask(issue_details)
@@ -129,12 +129,5 @@ class PromptExpertAgent(LLMAgent):
     # handle_action_result
     # get_feedback
     # run
-
-    # 生成issue修复模板
-    def generate_fix_template(self, issue_details={}):
-        response = self.chat_completions(
-            f"对C语言{issue_details['Query']}问题生成修复模板\n",
-            temperature=0.5, top_p=0.95, max_tokens=2000)
-        return response
 
     # 生成issue审计模板

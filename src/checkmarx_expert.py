@@ -57,7 +57,7 @@ class CheckmarxExpert(LLMAgent):
 
         # 2. Checkmarx Query
         prompt = self.prompt_agent.generate_prompt("CHECKMARX_QUERY", issue_details)
-        checkmarx_content = self.chat_completions(prompt)
+        checkmarx_content = self.chat_completions(prompt, temperature=1)
         output_callback(checkmarx_content)
 
         # 3. Load the code snippets
@@ -66,17 +66,17 @@ class CheckmarxExpert(LLMAgent):
 
         # 4. Execute Identify Vulnerabilities
         prompt = self.prompt_agent.generate_prompt("IDENTIFY_VULNERABILITIES", issue_details, code_snippets)
-        vulnerabilities_content = self.chat_completions(prompt)
+        vulnerabilities_content = self.chat_completions(prompt, temperature=1)
         output_callback(vulnerabilities_content)
 
         # 5. Execute Fix Code
         prompt = self.prompt_agent.generate_prompt("AUTO_FIX_CODE", issue_details, code_snippets)
-        fixcode_content = self.chat_completions(prompt)
+        fixcode_content = self.chat_completions(prompt, temperature=1)
         output_callback(fixcode_content)
 
         # 6. Execute Format Patch
         prompt = self.prompt_agent.generate_prompt("AUTO_FIX", issue_details, code_snippets=code_snippets)
-        patch_content = self.chat_completions(prompt)
+        patch_content = self.chat_completions(prompt, temperature=1)
         output_callback(patch_content, "code_light_blue")
 
         # result = self.formatpatch_agent.is_format_patch(patch_content, code_snippets)
@@ -86,15 +86,15 @@ class CheckmarxExpert(LLMAgent):
         self.formatpatch_agent.format_patch(src_file_name, patch_content)
         return None
     
-    def execute_action(self, issue = "", prompt_type="", code_snippets=[]):
+    def execute_action(self, issue, prompt_type, code_snippets, template):
         issue_details = self.details_from_issue(issue)
 
-        prompt = self.prompt_agent.generate_prompt(prompt_type, issue_details, code_snippets)
-        return self.chat_completions(prompt)
+        prompt = self.prompt_agent.generate_prompt(prompt_type, issue_details, code_snippets, template)
+        return self.chat_completions(prompt, temperature=1)
 
     def execute_action_with_patch(self, issue="", prompt_type="", code_snippets=[], output_callback: Callable[[str, str], None]=None):
         try:
-            patch_content = self.execute_action(issue, prompt_type, code_snippets)
+            patch_content = self.execute_action(issue, prompt_type, code_snippets, template="")
             output_callback(patch_content, "code_light_blue")
 
             # Save format patch
@@ -116,14 +116,18 @@ class CheckmarxExpert(LLMAgent):
 
         # 1. CHECKMARX_QUERY Vulnerabilities
         prompt = self.prompt_agent.generate_prompt("CHECKMARX_QUERY", self.issue_details)
-        self.chat_completions(prompt)
+        self.chat_completions(prompt, temperature=1)
 
         # 2. Load the code snippets
         code_snippets = self.ccode_agent.format_code_snippet(
             snippet_type="LINE_NUM", encoding="utf-8", file_path=src_file_name, line=line, chunk_size=50)
         self.execute_action(
-            issue, prompt_type="CODE_SNIPPETS_TEMPLATE", code_snippets=code_snippets)
+            issue, prompt_type="CODE_SNIPPETS", code_snippets=code_snippets, template="")
 
         # 3. Execute Identify Vulnerabilities
-        vulnerabilities = self.execute_action(issue, "IDENTIFY_VULNERABILITIES")
+        vulnerabilities = self.execute_action(issue, "IDENTIFY_VULNERABILITIES", code_snippets=[], template="")
         return vulnerabilities
+
+    def generate_fixtemplate(self, issue_details={}):
+        prompt = self.prompt_agent.generate_prompt("AUTO_FIX_TEMPLATE", issue_details)
+        return self.chat_completions(prompt, temperature=1)

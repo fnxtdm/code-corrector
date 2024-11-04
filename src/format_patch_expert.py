@@ -55,15 +55,23 @@ class FormatPatchExpert(LLMAgent):
 
         print(f"Saved extracted code to {self.patch_file_path}")
 
-    def review_patch(self, code_snippets=[]):
+    def review_patch(self, issue_details, code_snippets=[]):
         self.clean_history()
 
         patch_content = ""
-        with open(self.patch_file_path, 'r') as patch_file:
+        with open(self.patch_file_path, 'r', encoding='utf-8') as patch_file:
             patch_content = patch_file.read()
 
         prompt = "".join(self.prompts[
-            "REVIEW_PATCH"]).format(patch_content=patch_content, code="".join(code_snippets))
+            "REVIEW_PATCH"]).format(
+                Query=issue_details['Query'],
+                QueryPath=issue_details['QueryPath'],
+                Custom=issue_details['Custom'],
+                SrcFileName=issue_details['SrcFileName'],
+                Line=issue_details['Line'],
+                DestLine=issue_details['DestLine'],
+                Name=issue_details['Name'],
+                patch_content=patch_content, code="".join(code_snippets))
 
         print("REVIEW:", prompt)
         response = self.chat_completions(prompt)
