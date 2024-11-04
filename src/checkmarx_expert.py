@@ -40,44 +40,50 @@ class CheckmarxExpert(LLMAgent):
         self.issue_details = self.checkmarx_data_loader.select_item_by_sample_issue(issue)
         return self.issue_details
         
-    def run(self, output_callback: Callable[[str, str], None]):
-        sample_issues = self.checkmarx_data_loader.load_sample_issues()
+    def run(self, issue, output_callback: Callable[[str, str], None]):
+        if output_callback is None:
+            raise ValueError("output_callback cannot be None")
 
-        for issue in sample_issues:
-            self.clean_history()
-            issue_details = self.details_from_issue(issue)
+        # 1. Clanean the history
+        self.clean_history()
 
-            line = issue_details['Line']
-            src_file_name = issue_details['SrcFileName']
-            query = issue_details['Query']
+        issue_details = self.details_from_issue(issue)
+        line = issue_details['Line']
+        src_file_name = issue_details['SrcFileName']
 
-            if query != 'Use of Obsolete Functions':
-                continue
+        # query = issue_details['Query']
+        # if query != 'Use of Obsolete Functions':
+        #     return None
 
-            prompt = self.prompt_agent.generate_prompt("CHECKMARX_QUERY", issue_details)
-            checkmarx_content = self.chat_completions(prompt)
-            output_callback(checkmarx_content)
+        # 2. Checkmarx Query
+        prompt = self.prompt_agent.generate_prompt("CHECKMARX_QUERY", issue_details)
+        checkmarx_content = self.chat_completions(prompt)
+        output_callback(checkmarx_content)
 
-            code_snippets = self.ccode_agent.format_code_snippet(
-            snippet_type="LINE_NUM", encoding="utf-8", file_path=src_file_name, line=line, chunk_size=100)
+        # 3. Load the code snippets
+        code_snippets = self.ccode_agent.format_code_snippet(
+        snippet_type="LINE_NUM", encoding="utf-8", file_path=src_file_name, line=line, chunk_size=100)
 
-            prompt = self.prompt_agent.generate_prompt("IDENTIFY_VULNERABILITIES", issue_details, code_snippets)
-            vulnerabilities_content = self.chat_completions(prompt)
-            output_callback(vulnerabilities_content)
+        # 4. Execute Identify Vulnerabilities
+        prompt = self.prompt_agent.generate_prompt("IDENTIFY_VULNERABILITIES", issue_details, code_snippets)
+        vulnerabilities_content = self.chat_completions(prompt)
+        output_callback(vulnerabilities_content)
 
-            prompt = self.prompt_agent.generate_prompt("AUTO_FIX_CODE", issue_details, code_snippets)
-            fixcode_content = self.chat_completions(prompt)
-            output_callback(fixcode_content)
+        # 5. Execute Fix Code
+        prompt = self.prompt_agent.generate_prompt("AUTO_FIX_CODE", issue_details, code_snippets)
+        fixcode_content = self.chat_completions(prompt)
+        output_callback(fixcode_content)
 
-            prompt = self.prompt_agent.generate_prompt("AUTO_FIX", issue_details, code_snippets=code_snippets)
-            patch_content = self.chat_completions(prompt)
-            output_callback(patch_content, "code_light_blue")
+        # 6. Execute Format Patch
+        prompt = self.prompt_agent.generate_prompt("AUTO_FIX", issue_details, code_snippets=code_snippets)
+        patch_content = self.chat_completions(prompt)
+        output_callback(patch_content, "code_light_blue")
 
-            # result = self.formatpatch_agent.is_format_patch(patch_content, code_snippets)
-            # print(result)
+        # result = self.formatpatch_agent.is_format_patch(patch_content, code_snippets)
+        # print(result)
 
-            # Save format patch
-            self.formatpatch_agent.format_patch(src_file_name, patch_content)
+        # 7. Save format patch
+        self.formatpatch_agent.format_patch(src_file_name, patch_content)
         return None
     
     def execute_action(self, issue = "", prompt_type="", code_snippets=[]):

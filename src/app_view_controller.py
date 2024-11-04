@@ -378,17 +378,20 @@ class AppViewController:
 
         self.global_config.save_to_disk()
 
-
-    async def async_autofix(self):
-        self.checkmarx_agent.run(output_callback=self.insert_issue_text)
-
-        self.status_bar.config(text="Ready")
-        self.dialog.destroy()
-        return None
-
     def run_all(self):
+        async def async_autofix(self):
+            sample_issues = self.checkmarx_data_loader.load_sample_issues()
+
+            for issue in sample_issues:
+                self.checkmarx_agent.run(issue, output_callback=self.insert_issue_text)
+
+            self.status_bar.config(text="Ready")
+            self.dialog.destroy()
+            return None
+
         threading.Thread(target=lambda: asyncio.run(
-            self.async_autofix())).start()
+            async_autofix())).start()
+
         self.status_bar.config(text="Processing...")
         self.show_dialog("Generating patch...", "Generating patch, please wait...")
         return None
