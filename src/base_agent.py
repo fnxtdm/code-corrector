@@ -51,7 +51,7 @@ class BaseAgent:
         self.chat_history = []
 
         self.logging = None
-        self.answer_language = None
+        self.answer_language = "English"
         self.url = None
         self.token = None
 

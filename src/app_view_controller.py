@@ -72,7 +72,7 @@ class AppViewController:
         self.search_frame.pack(pady=10, anchor='w')
 
         self.search_label = ttk.Label(
-            self.search_frame, text="Checkmarx Report Issues: ", font=tkFont.Font(size=11, weight="bold"))
+            self.search_frame, text="Checkmarx Report Issues: ", font=tkFont.Font(size=14, weight="bold"))
         # Align the label to the left
         self.search_label.pack(side=tk.LEFT, anchor='w')
 
@@ -94,14 +94,13 @@ class AppViewController:
         # self.issues_listbox.configure(font=font_style)
 
         # Label above the content display area
-        self.description_label = ttk.Label(root, text="Description:", font=tkFont.Font(size=11, weight="bold"))
-        # Align the label to the left and adjust pady to 55
-        self.description_label.pack(padx=10, pady=5, anchor='w')
+        self.description_label = ttk.Label(root, text="Description:", font=tkFont.Font(size=10, weight="normal"))
+        self.description_label.pack(padx=10, pady=10, anchor='w')
 
         self.detail_label = ttk.Label(
-            root, text="\n\n\n\n\n", font=tkFont.Font(size=10, weight="bold"), foreground="red")
+            root, text="\n\n\n\n\n", font=tkFont.Font(size=10, weight="normal"), foreground="red")
         # Align the label to the left
-        self.detail_label.pack(padx=10, pady=1, anchor='w')
+        self.detail_label.pack(padx=10, pady=2, anchor='w')
         self.detail_label.bind("<Button-1>", self.open_link)
 
         # add buttons for handel auto and manual fix code
@@ -138,7 +137,7 @@ class AppViewController:
 
         # Content display area
         self.issues_text = tk.Text(
-            root, wrap=tk.WORD, width=150, height=40, font=tkFont.Font(size=10, weight="normal"), foreground="#333333")
+            root, wrap=tk.WORD, width=150, height=40, font=tkFont.Font(size=12, weight="normal"), foreground="#333333")
         self.issues_text.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
         # Configure the background color to black

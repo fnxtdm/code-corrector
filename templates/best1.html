@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧内容 -->
+        <div class="main-content">
+            <div class="header">
+                <h2>{{ title }}</h2>
+                <div class="actions">
+                    <button>Run</button>
+                </div>
+            </div>
+
+            <!-- 输入接收区域 -->
+            <div class="input-section">
+                <div class="step">
+                    <div class="step-icon">📥</div>
+                    <div class="step-text">Receive input from Quick Actions</div>
+                </div>
+                <div class="nested-step">If there's no input: Continue</div>
+            </div>
+
+            <!-- 步骤列表 -->
+            <div class="steps">
+                <!-- 添加 highlight-step 类来突出显示这个步骤 -->
+                <div class="step highlight-step">
+                    <div class="step-icon">📸</div>
+                    <div class="step-text">Take Interactive Screenshot</div>
+                </div>
+                <div class="step nested-step">
+                    <div class="step-icon">🔍</div>
+                    <div class="step-text">If Screenshot has any value</div>
+                </div>
+                <div class="step nested-step">
+                    <div class="step-icon">📝</div>
+                    <div class="step-text">Extract text from Screenshot</div>
+                </div>
+                <div class="step nested-step">
+                    <div class="step-icon">🔗</div>
+                    <div class="step-text">Combine Text from Image with New Lines</div>
+                </div>
+                <div class="step nested-step">
+                    <div class="step-icon">📋</div>
+                    <div class="step-text">Copy Combined Text to clipboard</div>
+                </div>
+                <div class="step nested-step">
+                    <div class="step-icon">🔔</div>
+                    <div class="step-text">Show notification Combined Text</div>
+                </div>
+                <div class="step">
+                    <div class="step-icon">✔️</div>
+                    <div class="step-text">End If</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧设置栏 -->
+        <div class="sidebar">
+            <h3>Settings</h3>
+            <div class="settings">
+                <label><input type="checkbox"> Pin in Menu Bar</label>
+                <label><input type="checkbox"> Show in Share Sheet</label>
+                <label><input type="checkbox" checked> Receive What's On Screen</label>
+                <label><input type="checkbox" checked> Use as Quick Action</label>
+                <label style="margin-left: 20px;"><input type="checkbox"> Finder</label>
+                <label style="margin-left: 20px;"><input type="checkbox"> Touch Bar</label>
+                <label><input type="checkbox" checked> Services Menu</label>
+                <label><input type="checkbox"> Provide Output</label>
+                <label>Run with: <kbd>⌃⌘X</kbd></label>
+                <label><input type="checkbox"> Show on Apple Watch</label>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

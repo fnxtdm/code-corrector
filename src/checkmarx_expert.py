@@ -27,6 +27,7 @@ class CheckmarxExpert(LLMAgent):
 
         self.checkmarx_data_loader = None
         self.issue_details = None
+        self.system_role += f"Using {self.answer_language} as the answer language.\n"
 
         with open("prompts.json", 'r', encoding='utf-8') as file:
             self.prompts = json.load(file)

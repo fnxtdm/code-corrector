@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Correction Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* 调整对齐方式以适应流式布局 */
+            min-height: 100vh; /* 确保内容最小高度为100vh */
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            background-color: #ffffff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-wrap: wrap; /* 使用流式布局 */
+            margin: 20px 0; 
+        }
+        .sidebar {
+            width: 100%;
+            max-width: 30%;
+            padding: 20px;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+            box-sizing: border-box;
+        }
+        .main {
+            width: 100%;
+            max-width: 70%;
+            padding: 20px;
+            box-sizing: border-box;
+            flex-grow: 1; /* 内容区域在空间不足时可以扩展 */
+        }
+        .header-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #ffffff;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 1em;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        .description {
+            margin-bottom: 20px;
+        }
+        .code {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 5px;
+            font-family: monospace;
+            overflow-x: auto;
+            max-height: 50vh;
+            box-sizing: border-box;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                max-width: 100%;
+                border-right: none;
+                border-bottom: 1px solid #ddd;
+                padding-bottom: 10px;
+                margin-bottom: 10px;
+            }
+            .main {
+                max-width: 100%;
+                padding-top: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>Checkmarx Report Issues:</h2>
+            <ul>
+                <li>[Absolute Path Traversal] localServices/applications/ar...</li>
+                <li>[Absolute Path Traversal] localServices/applications/ar...</li>
+                <!-- Add more issues here as needed -->
+            </ul>
+        </div>
+
+        <div class="main">
+            <div class="description">
+                <h2>Description:</h2>
+                <p><strong>Issue Type:</strong> Absolute Path Traversal<br>
+                <strong>File Path:</strong> tools/devtools/mkpkg.js<br>
+                <strong>Line Number:</strong> 345<br>
+                <strong>Name:</strong> argv<br>
+                <strong>Link:</strong> 
+                <a href="https://cx.dell.com/CxWebClient/ViewerMain.aspx?scanid=9601715&projectid=240702&pathid=24" target="_blank">Click here</a>
+                </p>
+                <div class="header-buttons">
+                    <a href="#" class="button">Identify Vulnerability</a>
+                    <a href="#" class="button">Auto Fix</a>
+                    <a href="#" class="button">Review Patch</a>
+                    <a href="#" class="button">Refactor</a>
+                </div>
+            </div>
+
+            <div class="code">
+                <pre>
+fs.closeSync(fd);
+fs.stat(pkglist[0], function(err, stats) {
+    console.log('size:', stats.size);
+    resolve();
+});
+
+if (process.argv.length >= 6) {
+    let url = process.argv[2];
+    let major = process.argv[3];
+    let minor = process.argv[4];
+    let pkgname = process.argv[5];
+    let pkg = fs.createWriteStream(name + '_' + major + '_' + minor + '.pkg');
+
+    readFileMd5(url).then(md5 => {
+        createFullPkgRecord(url, md5).then(function() {
+            return createPkgDiffRecord(major, minor);
+        }).then(function() {
+            createPkgSignRecord();
+        }).then(function() {
+            createPkgHeader(pkg, major, minor, 3, "Root");
+        });
+    });
+
+} else {
+    console.log("node mkpkg.js [file name] [major version] [minor version] [pkgname]");
+</pre>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
