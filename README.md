@@ -26,3 +26,6 @@
 - `src/`: 源代码
 - `tests/`: 测试文件
 - `docs/`: 文档
+
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -nodes
+python manage.py runserver 127.0.0.1:8000
