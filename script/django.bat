@@ -1,1 +1,1 @@
-python.exe .\manage.py runserver
+python.exe manage.py runserver 8081

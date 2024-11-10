@@ -23,7 +23,7 @@ class SecureWSGIServer(HTTPServer):
 
 if __name__ == '__main__':
     # Run the Django application as a WSGI app
-    port = 8000
+    port = 8080
     try:
         # Initialize the WSGI application
         wsgi_app = WSGIHandler()

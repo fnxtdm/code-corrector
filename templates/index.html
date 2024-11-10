@@ -16,8 +16,8 @@
             min-height: 100vh; /* 确保内容最小高度为100vh */
         }
         .container {
-            width: 90%;
-            max-width: 1200px;
+            width: 96%;
+            max-width: 1400px;
             background-color: #ffffff;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             display: flex;
@@ -31,6 +31,7 @@
             border-right: 1px solid #ddd;
             overflow-y: auto;
             box-sizing: border-box;
+            min-height: 95vh;
         }
         .main {
             width: 100%;
@@ -66,8 +67,9 @@
             border-radius: 5px;
             font-family: monospace;
             overflow-x: auto;
-            max-height: 50vh;
+            max-height: 100vh;
             box-sizing: border-box;
+            min-height: 62vh;
         }
 
         @media (max-width: 768px) {
@@ -83,15 +85,57 @@
                 padding-top: 10px;
             }
         }
+
+
+
+        /* Basic styles for the drop zone */
+        .drop-zone {
+            width: 60%;
+            height: 20px;
+            border: 2px dashed #0087F7;
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: #0087F7;
+            font-size: 12px;
+            margin-top: 2px;
+            margin-left: 80px;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        .drop-zone.hover {
+            border-color: #0056b3;
+            background-color: #f0f8ff;
+        }
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="sidebar">
             <h2>Checkmarx Report Issues:</h2>
-            <ul>
-                <li>[Absolute Path Traversal] localServices/applications/ar...</li>
-                <li>[Absolute Path Traversal] localServices/applications/ar...</li>
+                <div class="drop-zone" id="drop-zone">
+                    Drag and drop file here or click to upload
+                </div>
+                <input type="file" id="file-input" class="hidden" accept=".csv" />
+                <button id="upload-button" class="hidden">Upload</button>
+            <ul id="issue-list">
+                <script>
+                fetch('/list_issue')
+                    .then(response => response.json())
+                    .then(data => {
+                        const list = document.getElementById('issue-list');
+                        data.forEach(item => {
+                            const li = document.createElement('li');
+                            li.textContent = item.issue;
+                            list.appendChild(li);
+                        });
+                    });
+                </script>
+                <li>[xxAbsolute Path Traversal] localServices/applications/ar...</li>
                 <!-- Add more issues here as needed -->
             </ul>
         </div>
@@ -146,4 +190,75 @@ if (process.argv.length >= 6) {
         </div>
     </div>
 </body>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const uploadButton = document.getElementById('upload-button');
+
+        // Click event to trigger file input
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        // Dragging events
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.add('hover');
+        });
+
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('hover'));
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.remove('hover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        // Handle file input change
+        fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+
+        // Handle upload button click
+        uploadButton.addEventListener('click', uploadFile);
+
+        // Function to handle file(s)
+        function handleFiles(files) {
+            if (files.length > 0) {
+                fileInput.files = files; // Assign files to file input
+                dropZone.textContent = files[0].name; // Show file name
+                uploadButton.classList.remove('hidden'); // Show upload button
+            }
+        }
+
+        // Function to upload the file
+        function uploadFile() {
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            fetch("{% url 'upload_file' %}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'  // Include CSRF token for security
+                }
+            })
+            .then(response => response.text())
+            .then(data => {
+                alert(data);  // Show the response message
+                resetForm();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Function to reset the form after upload
+        function resetForm() {
+            dropZone.textContent = 'Drag and drop a CSV file here or click to upload';
+            fileInput.value = ''; // Clear the input
+            uploadButton.classList.add('hidden'); // Hide upload button
+        }
+    });
+</script>
 </html>
